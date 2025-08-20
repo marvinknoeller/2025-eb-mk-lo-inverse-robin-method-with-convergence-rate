@@ -1,6 +1,6 @@
 ## License
 
-Copyright (c) 2025, Erik Burman, Marvin Knöller, Lauri Oksanen
+Copyright (c) 2025, Erik Burman, Marvin Knöller and Lauri Oksanen
 
 This software is released under GNU General Public License, Version 3.
 The full license text is provided in the file LICENSE included in this repository 
