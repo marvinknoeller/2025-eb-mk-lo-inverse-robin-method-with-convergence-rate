@@ -81,13 +81,13 @@ for h_ell in range(num_h):
     c_coeffs = np.array([10.0, 1.0, -.5, 2.0, 1.0, -.5])
     s_coeffs = np.array([.2, 1.0, -.5, 2.0, 1.0, -.5])
     
-    dc_coeffs = np.arange(0,c_coeffs.size,1.) * c_coeffs
+    dc_coeffs = -np.arange(0,c_coeffs.size,1.) * c_coeffs
     ds_coeffs = np.arange(1,s_coeffs.size+1,1.) * s_coeffs
     
     dcos_coeffs = fem.Constant(domain, default_scalar_type(dc_coeffs))
     dsin_coeffs = fem.Constant(domain, default_scalar_type(ds_coeffs))
     
-    der_alpha_exact = create_fun(dcos_coeffs, dsin_coeffs, x)
+    der_alpha_exact = create_fun(dsin_coeffs, dcos_coeffs, x)
     
     """ set q = uh_ex|_\omega"""
     delta = 0
@@ -100,6 +100,14 @@ for h_ell in range(num_h):
     def error_infinity(c, s, u_ex):
         # Interpolate exact solution, special handling if exact solution
         # is a ufl expression or a python lambda function
+        tol = 1e-12
+        bdry = lambda x: (
+            np.isclose(x[0], 0.0, atol=tol) |
+            np.isclose(x[0], 1.0, atol=tol) |
+            np.isclose(x[1], 0.0, atol=tol) |
+            np.isclose(x[1], 1.0, atol=tol)
+        )
+        boundary_dofs = locate_dofs_geometrical(V, bdry)
         u_h = fem.Function(V)
         u_h.interpolate(lambda x : create_fun_interpol(c, s, x))
         comm = u_h.function_space.mesh.comm
@@ -111,7 +119,7 @@ for h_ell in range(num_h):
             u_ex_V.interpolate(u_ex)
         # Compute infinity norm, first local to process, then gather the max
         # value over all processes
-        error_max_local = np.max(np.abs(u_h.x.array - u_ex_V.x.array))
+        error_max_local = np.max(np.abs(u_h.x.array[boundary_dofs] - u_ex_V.x.array[boundary_dofs]))
         error_max = comm.allreduce(error_max_local, op=MPI.MAX)
         return error_max
     
@@ -200,8 +208,8 @@ for h_ell in range(num_h):
     for ell in range(10000):
         if np.linalg.norm(x_ell - x_ell0)<tol:
             err_vec[h_ell] = (error_infinity(cos_coeffs_ell, sin_coeffs_ell,alpha_exact) + 
-                              error_infinity(np.arange(0,cos_coeffs_ell.size,1.)*cos_coeffs_ell, 
-                                             np.arange(1,sin_coeffs_ell.size+1,1.)*sin_coeffs_ell,
+                              error_infinity(np.arange(1,sin_coeffs_ell.size+1,1.)*sin_coeffs_ell,
+                                             -np.arange(0,cos_coeffs_ell.size,1.)*cos_coeffs_ell, 
                                              der_alpha_exact)
                               )
             print('Final Linfty error '+str(err_vec[h_ell]))
