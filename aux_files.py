@@ -175,7 +175,7 @@ def evaluate_F(alpha, num_cos, num_sin, N, domain, fhandle, ghandle, q, V, dofs,
     uh_res.x.scatter_forward()
     z_ha = solve_robin(domain = domain,
                        alpha=alpha,
-                       fhandle = q-uh_res,
+                       fhandle = uh_res-q,
                        ghandle = fem.Constant(domain, default_scalar_type(0.0)),
                        N = int(N),
                        degree = 1,
@@ -317,7 +317,7 @@ def evaluate_DF(alpha, u_ha, z_ha, num_cos, num_sin, domain, V, dofs, LU=True):
         uhprime_res = fem.Function(V)
         uhprime_res.x.array[dofs] = u_ha_prime.array[dofs]
         uhprime_res.x.scatter_forward()
-        f2.x.array[:] = -uhprime_res.x.array[:]
+        f2.x.array[:] = uhprime_res.x.array[:]
         b = fem.petsc.assemble_vector(Luh2_compiled)
         ksp.solve(b, z_ha_prime)
         # update the place holder
@@ -358,7 +358,7 @@ def evaluate_DF(alpha, u_ha, z_ha, num_cos, num_sin, domain, V, dofs, LU=True):
         uhprime_res = fem.Function(V)
         uhprime_res.x.array[dofs] = u_ha_prime.array[dofs]
         uhprime_res.x.scatter_forward()
-        f2.x.array[:] = -uhprime_res.x.array[:]
+        f2.x.array[:] = uhprime_res.x.array[:]
         b = fem.petsc.assemble_vector(Luh2_compiled)
         ksp.solve(b, z_ha_prime)
         # update the place holder
